@@ -304,15 +304,15 @@ body {
     font-size: 0.85rem;
 }
 
-/* Charts Grid */
+/* Charts Grid (ปรับขนาดกล่องกราฟให้แบ่งครึ่งเท่ากัน และสูงขึ้น) */
 .charts-grid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(2, 1fr);
     gap: 20px;
 }
 
 .large-chart {
-    grid-column: span 2;
+    grid-column: auto;
 }
 
 .chart-container {
@@ -335,7 +335,7 @@ body {
 
 .canvas-wrapper {
     position: relative;
-    height: 250px;
+    height: 320px;
     width: 100%;
     flex: 1;
 }

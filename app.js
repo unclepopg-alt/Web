@@ -10,7 +10,6 @@ let globalData = [];
 const excelFileInput = document.getElementById('excelFileInput');
 const webFilter = document.getElementById('webFilter');
 const categoryFilter = document.getElementById('categoryFilter');
-const timeFilter = document.getElementById('timeFilter');
 const syncStatus = document.getElementById('syncStatus');
 const syncText = document.getElementById('syncText');
 
@@ -18,8 +17,25 @@ document.addEventListener('DOMContentLoaded', () => {
     excelFileInput.addEventListener('change', handleFileUpload);
     webFilter.addEventListener('change', applyFilters);
     categoryFilter.addEventListener('change', applyFilters);
-    timeFilter.addEventListener('change', applyFilters);
 });
+
+// ฟังก์ชันพิเศษ: แก้ปัญหาปีใน Excel 
+function parseCustomDate(dateValue) {
+    if (!dateValue) return null;
+    let d = (dateValue instanceof Date) ? new Date(dateValue.getTime()) : new Date(dateValue);
+
+    if (isNaN(d.getTime())) return null;
+
+    let year = d.getFullYear();
+
+    if (year >= 2500) {
+        d.setFullYear(year - 543);
+    } else if (year >= 1960 && year < 2000) {
+        d.setFullYear(year + 57);
+    }
+
+    return d;
+}
 
 function handleFileUpload(e) {
     const files = e.target.files;
@@ -27,7 +43,7 @@ function handleFileUpload(e) {
 
     syncText.textContent = "กำลังอ่านไฟล์...";
     syncStatus.classList.remove('connected');
-    globalData = []; // Reset ข้อมูลเดิม
+    globalData = [];
 
     let filesProcessed = 0;
 
@@ -43,17 +59,17 @@ function handleFileUpload(e) {
                     const worksheet = workbook.Sheets[sheetName];
                     const rawData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
 
-                    // กำหนดตัวแปรเว็บไซต์ (กห, สป, ทสอ, สม.กห, ศดจ) จากชื่อไฟล์
                     let websiteName = "ไม่ระบุ";
                     let checkName = (file.name + " " + sheetName).toLowerCase();
-                    if (checkName.includes("ศูนย์ดิจิทัล")) websiteName = "ศดจ";
+
+                    // เปลี่ยนชื่อย่อตามที่กำหนด
+                    if (checkName.includes("ศูนย์ดิจิทัล")) websiteName = "ศดท";
                     else if (checkName.includes("กรมเทคโนโลยีสารสนเทศ") || checkName.includes("dist")) websiteName = "ทสอ";
-                    else if (checkName.includes("สมาคมภริยา") || checkName.includes("wives")) websiteName = "สม.กห";
+                    else if (checkName.includes("สมาคมภริยา") || checkName.includes("wives")) websiteName = "สมาคมภริยาฯ";
                     else if (checkName.includes("สำนักงานปลัด") || checkName.includes("opsd")) websiteName = "สป";
                     else if (checkName.includes("กระทรวงกลาโหม") || checkName.includes("mod")) websiteName = "กห";
 
                     let headerRowIdx = -1;
-                    // หาว่าหัวตารางอยู่บรรทัดไหน
                     for (let i = 0; i < Math.min(10, rawData.length); i++) {
                         if (rawData[i] && rawData[i].some(cell => typeof cell === 'string' && (cell.includes('ชื่อเรื่อง') || cell.includes('ลำดับ')))) {
                             headerRowIdx = i;
@@ -63,7 +79,6 @@ function handleFileUpload(e) {
 
                     if (headerRowIdx !== -1) {
                         const headers = rawData[headerRowIdx];
-                        // ลูปอ่านข้อมูลทีละบรรทัด
                         for (let i = headerRowIdx + 1; i < rawData.length; i++) {
                             const row = rawData[i];
                             if (!row || row.length === 0) continue;
@@ -110,71 +125,31 @@ function populateFilters(data) {
     const catSet = new Set();
 
     data.forEach(row => {
-        // ดึงประเภทข่าว
         const catKey = Object.keys(row).find(k => k.includes('ประเภท') || k.includes('งานที่ลง'));
-        const category = (catKey && row[catKey]) ? row[catKey].toString().trim() : 'ไม่ระบุประเภท';
+        const category = (catKey && row[catKey]) ? row[catKey].toString().trim() : 'ไม่ระบุหัวข้อ';
         catSet.add(category);
     });
 
-    // อัปเดต Dropdown ประเภทข่าว
-    categoryFilter.innerHTML = '<option value="all">ทุกประเภทข่าว / งานที่ลง</option>';
+    categoryFilter.innerHTML = '<option value="all">ทุกหัวข้อ</option>';
     Array.from(catSet).sort().forEach(cat => {
         categoryFilter.innerHTML += `<option value="${cat}">${cat}</option>`;
     });
 
-    // รีเซ็ตค่าตัวกรองเป็น Default
     webFilter.value = 'all';
-    timeFilter.value = 'all';
 }
 
 function applyFilters() {
     const selectedWeb = webFilter.value;
     const selectedCat = categoryFilter.value;
-    const selectedTime = timeFilter.value;
-
-    // หาวันที่ "ล่าสุด" ที่มีในข้อมูล เพื่อใช้เป็นจุดอ้างอิงของ "วันนี้" (หลีกเลี่ยงปัญหาข้อมูลคนละปีกับปีปัจจุบัน)
-    let maxDateVal = 0;
-    globalData.forEach(row => {
-        const dateInKey = Object.keys(row).find(k => k.includes('เข้า') || k.includes('รับ'));
-        const dateDoneKey = Object.keys(row).find(k => k.includes('แล้วเสร็จ'));
-        let dateToUse = dateInKey ? row[dateInKey] : (dateDoneKey ? row[dateDoneKey] : null);
-
-        if (dateToUse) {
-            let d = (dateToUse instanceof Date) ? dateToUse : new Date(dateToUse);
-            if (!isNaN(d.getTime()) && d.getTime() > maxDateVal) {
-                maxDateVal = d.getTime();
-            }
-        }
-    });
-    // ตั้งค่า maxDate เป็นวันที่ใหม่ที่สุดในระบบ
-    let maxDate = maxDateVal > 0 ? new Date(maxDateVal) : new Date();
 
     let filteredData = globalData.filter(row => {
-        // 1. กรองหน่วยงาน (กห สป ทสอ สม.กห ศดจ)
+        // กรองหน่วยงาน
         if (selectedWeb !== 'all' && row._website !== selectedWeb) return false;
 
-        // 2. กรองประเภทข่าว
+        // กรองหัวข้อ
         const catKey = Object.keys(row).find(k => k.includes('ประเภท') || k.includes('งานที่ลง'));
-        const category = (catKey && row[catKey]) ? row[catKey].toString().trim() : 'ไม่ระบุประเภท';
+        const category = (catKey && row[catKey]) ? row[catKey].toString().trim() : 'ไม่ระบุหัวข้อ';
         if (selectedCat !== 'all' && category !== selectedCat) return false;
-
-        // 3. กรองช่วงเวลา (วัน, สัปดาห์, เดือน, 3 เดือน)
-        if (selectedTime !== 'all') {
-            const dateInKey = Object.keys(row).find(k => k.includes('เข้า') || k.includes('รับ'));
-            const dateDoneKey = Object.keys(row).find(k => k.includes('แล้วเสร็จ'));
-            let dateToUse = dateInKey ? row[dateInKey] : (dateDoneKey ? row[dateDoneKey] : null);
-
-            if (!dateToUse) return false;
-
-            let d = (dateToUse instanceof Date) ? dateToUse : new Date(dateToUse);
-            if (isNaN(d.getTime())) return false;
-
-            // เทียบความห่างของวัน
-            const diffTime = Math.abs(maxDate - d);
-            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-            if (diffDays > parseInt(selectedTime)) return false;
-        }
 
         return true;
     });
@@ -199,7 +174,7 @@ function updateDashboard(data) {
         const dateInKey = Object.keys(row).find(k => k.includes('เข้า') || k.includes('รับ'));
 
         const title = titleKey ? row[titleKey] : '-';
-        const category = (catKey && row[catKey]) ? row[catKey].toString().trim() : 'ไม่ระบุประเภท';
+        const category = (catKey && row[catKey]) ? row[catKey].toString().trim() : 'ไม่ระบุหัวข้อ';
         const source = (srcKey && row[srcKey]) ? row[srcKey] : 'ไม่ระบุที่มา';
         const dateDone = dateDoneKey ? row[dateDoneKey] : null;
 
@@ -216,37 +191,34 @@ function updateDashboard(data) {
         categoryCounts[category] = (categoryCounts[category] || 0) + 1;
 
         let dateToUse = dateInKey ? row[dateInKey] : dateDone;
-        let dateObj = null;
+        let dateObj = parseCustomDate(dateToUse);
 
-        if (dateToUse) {
-            dateObj = (dateToUse instanceof Date) ? dateToUse : new Date(dateToUse);
-            if (!isNaN(dateObj.getTime())) {
-                const monthYear = dateObj.toLocaleDateString('th-TH', { month: 'short', year: '2-digit' });
-                monthlyCounts[monthYear] = (monthlyCounts[monthYear] || 0) + 1;
-            }
+        if (dateObj) {
+            const monthYear = dateObj.toLocaleDateString('th-TH', { month: 'short', year: '2-digit' });
+            monthlyCounts[monthYear] = (monthlyCounts[monthYear] || 0) + 1;
         }
 
         recentItems.push({
             website: row._website,
             title: title,
             category: category,
-            date: dateToUse,
+            date: dateObj,
             status: isCompleted ? 'แล้วเสร็จ' : 'กำลังดำเนินการ'
         });
     });
 
-    // อัปเดตตัวเลข
+    // อัปเดตตัวเลขเบื้องหลัง (แม้ไม่ได้โชว์)
     document.getElementById('totalItems').innerText = data.length.toLocaleString();
     document.getElementById('completedItems').innerText = completedCount.toLocaleString();
     document.getElementById('pendingItems').innerText = pendingCount.toLocaleString();
     document.getElementById('totalSources').innerText = sourceSet.size.toLocaleString();
 
-    // อัปเดตกราฟและตาราง
     updateCategoryChart(categoryCounts);
     updateTrendChart(monthlyCounts);
 
     recentItems.sort((a, b) => {
-        let da = new Date(a.date), db = new Date(b.date);
+        let da = a.date ? a.date.getTime() : 0;
+        let db = b.date ? b.date.getTime() : 0;
         return db - da;
     });
     updateTable(recentItems.slice(0, 15));
@@ -289,7 +261,7 @@ function updateCategoryChart(categoryData) {
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            cutout: '65%',
+            cutout: '50%', // ปรับให้วงแหวนหนาและใหญ่ขึ้น
             plugins: {
                 legend: {
                     position: 'right',
@@ -314,8 +286,17 @@ function updateTrendChart(monthlyData) {
     const ctx = document.getElementById('trendChart').getContext('2d');
     if (trendChartInstance) trendChartInstance.destroy();
 
-    const labels = Object.keys(monthlyData);
-    const data = Object.values(monthlyData);
+    const sortedEntries = Object.entries(monthlyData).sort((a, b) => {
+        const [monthA, yearA] = a[0].split(' ');
+        const [monthB, yearB] = b[0].split(' ');
+        const months = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+        const valA = parseInt(yearA) * 12 + months.indexOf(monthA);
+        const valB = parseInt(yearB) * 12 + months.indexOf(monthB);
+        return valA - valB;
+    });
+
+    const labels = sortedEntries.map(e => e[0]);
+    const data = sortedEntries.map(e => e[1]);
 
     trendChartInstance = new Chart(ctx, {
         type: 'bar',
@@ -357,11 +338,10 @@ function updateTrendChart(monthlyData) {
     });
 }
 
-function formatThaiDate(dateValue) {
-    if (!dateValue) return '-';
-    let d = (dateValue instanceof Date) ? dateValue : new Date(dateValue);
-    if (isNaN(d.getTime())) return String(dateValue);
-    return d.toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' });
+function formatThaiDate(dateObj) {
+    if (!dateObj) return '-';
+    if (isNaN(dateObj.getTime())) return '-';
+    return dateObj.toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' });
 }
 
 function updateTable(items) {

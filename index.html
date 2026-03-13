@@ -11,7 +11,7 @@
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
 </head>
 
 <body>
@@ -48,33 +48,23 @@
                 <div class="filter-group">
                     <label><i class="fa-solid fa-globe"></i> เว็บไซต์หน่วยงาน</label>
                     <select id="webFilter" class="filter-select">
-                        <option value="all">ทุกเว็บไซต์ (กห, สป, ทสอ, สม.กห, ศดจ)</option>
+                        <option value="all">ทุกเว็บไซต์ (กห, สป, ทสอ, สมาคมภริยาฯ, ศดท)</option>
                         <option value="กห">กห (กระทรวงกลาโหม)</option>
                         <option value="สป">สป (สำนักงานปลัดกระทรวงกลาโหม)</option>
                         <option value="ทสอ">ทสอ (กรมเทคโนโลยีสารสนเทศ)</option>
-                        <option value="สม.กห">สม.กห (สมาคมภริยาฯ)</option>
-                        <option value="ศดจ">ศดจ (ศูนย์ดิจิทัล)</option>
+                        <option value="สมาคมภริยาฯ">สมาคมภริยาฯ</option>
+                        <option value="ศดท">ศดท (ศูนย์ดิจิทัล)</option>
                     </select>
                 </div>
                 <div class="filter-group">
-                    <label><i class="fa-solid fa-tags"></i> ประเภทข่าว / งานที่ลง</label>
+                    <label><i class="fa-solid fa-tags"></i> หัวข้อ</label>
                     <select id="categoryFilter" class="filter-select">
-                        <option value="all">ทุกประเภทข่าว</option>
-                    </select>
-                </div>
-                <div class="filter-group">
-                    <label><i class="fa-solid fa-calendar-days"></i> ช่วงเวลา</label>
-                    <select id="timeFilter" class="filter-select">
-                        <option value="all">ทั้งหมด</option>
-                        <option value="1">1 วันล่าสุด (วัน)</option>
-                        <option value="7">7 วันล่าสุด (สัปดาห์)</option>
-                        <option value="30">30 วันล่าสุด (เดือน)</option>
-                        <option value="90">90 วันล่าสุด (3 เดือน)</option>
+                        <option value="all">ทุกหัวข้อ</option>
                     </select>
                 </div>
             </section>
 
-            <section class="stats-grid">
+            <section class="stats-grid" style="display: none;">
                 <div class="stat-card section-glass">
                     <div class="stat-icon revenue-icon"><i class="fa-solid fa-newspaper"></i></div>
                     <div class="stat-info">
@@ -112,7 +102,7 @@
             <section class="charts-grid">
                 <div class="chart-container custom-chart section-glass">
                     <div class="chart-header">
-                        <h2>สัดส่วนประเภทข่าว</h2>
+                        <h2>สัดส่วนหัวข้อ</h2>
                     </div>
                     <div class="canvas-wrapper doughnut-wrapper">
                         <canvas id="categoryChart"></canvas>
@@ -140,7 +130,7 @@
                                 <th>ลำดับ</th>
                                 <th>หน่วยงาน (เว็บ)</th>
                                 <th>ชื่อเรื่อง</th>
-                                <th>ประเภทข่าว/งานที่ลง</th>
+                                <th>หัวข้อ</th>
                                 <th>วันที่รับ/แล้วเสร็จ</th>
                                 <th>สถานะ</th>
                             </tr>
