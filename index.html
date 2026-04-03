@@ -4,148 +4,95 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ระบบรายงานผลการลงข้อมูลเว็บไซต์</title>
-    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="style.css">
+    <title>ระบบจองห้องอบรมคอมพิวเตอร์</title>
 
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
-    <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+    <!-- Fonts -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;700&family=Inter:wght@400;600;800&display=swap"
+        rel="stylesheet">
+
+    <!-- External CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
-    <div class="dashboard-container">
-        <aside class="sidebar section-glass">
+    <button id="mobile-menu-btn" class="mobile-toggle">☰</button>
+    <div id="sidebar-overlay" class="sidebar-overlay"></div>
+
+    <div class="app-container">
+        <aside class="sidebar">
             <div class="logo">
-                <i class="fa-solid fa-desktop"></i>
-                <span>Web Dashboard</span>
+                <img src="1.png" alt="Royal Logo">
+                <h1>ระบบจองห้องอบรม<span>กรมเทคโนโลยีสารสนเทศและอวกาศกลาโหม</span></h1>
             </div>
-            <nav class="nav-menu">
-                <a href="#" class="nav-item active"><i class="fa-solid fa-chart-line"></i> ภาพรวมผลการดำเนินงาน</a>
+
+            <nav class="sidebar-nav">
+                <div class="nav-section">
+                    <h3>สถานะปัจจุบัน</h3>
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <span class="stat-label">จองทั้งหมด</span>
+                            <span class="stat-value" id="total-bookings">0</span>
+                        </div>
+                        <div class="stat-card">
+                            <span class="stat-label">เดือนนี้</span>
+                            <span class="stat-value" id="month-bookings">0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="nav-section">
+                    <h3>ทรัพยากรห้อง</h3>
+                    <ul class="room-list">
+                        <li class="room-item active" data-room="comp-room">
+                            <span class="room-color" style="background: var(--accent);"></span>
+                            ห้องอบรม กรมเทคโนโลยีสารสนเทศและอวกาศกลาโหม
+                            <span class="room-count" id="count-comp-room">0</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="nav-section">
+                    <h3>ห้องอบรม กรมเทคโนโลยีสารสนเทศและอวกาศกลาโหม</h3>
+                    <div id="recent-bookings" class="recent-list">
+                        <!-- Dynamic Content -->
+                    </div>
+                </div>
             </nav>
+
+            <div class="sidebar-footer" style="margin-top: auto; padding-top: 2rem;">
+                <button id="export-pdf-btn" class="secondary-btn" style="width: 100%;">🖨️ พิมพ์รายงาน PDF</button>
+            </div>
         </aside>
 
         <main class="main-content">
-            <header class="top-header section-glass">
-                <div class="header-left">
-                    <h1 class="page-title">รายงานสถิติการอัปเดตเว็บไซต์</h1>
-                    <p class="subtitle">แสดงผลข้อมูลจากไฟล์ Excel (ลากคลุมเลือกหลายไฟล์พร้อมกันได้เลย)</p>
+            <header class="top-header">
+                <div class="header-info">
+                    <h2>ปฏิทินการจองห้องอบรม</h2>
+                    <p>เลือกวันที่บนปฏิทินเพื่อบันทึกการใช้ห้องอบรม</p>
                 </div>
-
-                <div class="sheet-connection">
-                    <div class="input-group">
-                        <i class="fa-solid fa-file-excel input-icon" style="color: #10b981;"></i>
-                        <input type="file" id="excelFileInput" accept=".xlsx, .xls, .csv" class="file-input" multiple>
-                    </div>
-                    <div class="status-indicator" id="syncStatus" style="margin-top: 10px;">
-                        <span class="dot"></span> <span id="syncText">รอการอัปโหลดไฟล์...</span>
-                    </div>
+                <div class="header-actions">
+                    <button id="add-booking-btn" class="primary-btn">+ เพิ่มการจองใหม่</button>
                 </div>
             </header>
 
-            <section class="filters-container section-glass">
-                <div class="filter-group">
-                    <label><i class="fa-solid fa-globe"></i> เว็บไซต์หน่วยงาน</label>
-                    <select id="webFilter" class="filter-select">
-                        <option value="all">ทุกเว็บไซต์ (กห, สป, ทสอ, สมาคมภริยาฯ, ศดท)</option>
-                        <option value="กห">กห (กระทรวงกลาโหม)</option>
-                        <option value="สป">สป (สำนักงานปลัดกระทรวงกลาโหม)</option>
-                        <option value="ทสอ">ทสอ (กรมเทคโนโลยีสารสนเทศ)</option>
-                        <option value="สมาคมภริยาฯ">สมาคมภริยาฯ</option>
-                        <option value="ศดท">ศดท (ศูนย์ดิจิทัล)</option>
-                    </select>
-                </div>
-                <div class="filter-group">
-                    <label><i class="fa-solid fa-tags"></i> หัวข้อ</label>
-                    <select id="categoryFilter" class="filter-select">
-                        <option value="all">ทุกหัวข้อ</option>
-                    </select>
-                </div>
-            </section>
-
-            <section class="stats-grid" style="display: none;">
-                <div class="stat-card section-glass">
-                    <div class="stat-icon revenue-icon"><i class="fa-solid fa-newspaper"></i></div>
-                    <div class="stat-info">
-                        <p class="stat-title">จำนวนข่าว/เรื่องทั้งหมด</p>
-                        <h3 class="stat-value" id="totalItems">0</h3>
-                        <p class="stat-change text-muted">เรื่อง</p>
-                    </div>
-                </div>
-                <div class="stat-card section-glass">
-                    <div class="stat-icon orders-icon"><i class="fa-solid fa-circle-check"></i></div>
-                    <div class="stat-info">
-                        <p class="stat-title">ดำเนินการแล้วเสร็จ</p>
-                        <h3 class="stat-value" id="completedItems" style="color: #10b981;">0</h3>
-                        <p class="stat-change text-muted">เรื่อง</p>
-                    </div>
-                </div>
-                <div class="stat-card section-glass">
-                    <div class="stat-icon conversion-icon"><i class="fa-solid fa-clock"></i></div>
-                    <div class="stat-info">
-                        <p class="stat-title">อยู่ระหว่างดำเนินการ</p>
-                        <h3 class="stat-value" id="pendingItems" style="color: #f59e0b;">0</h3>
-                        <p class="stat-change text-muted">เรื่อง</p>
-                    </div>
-                </div>
-                <div class="stat-card section-glass">
-                    <div class="stat-icon users-icon"><i class="fa-solid fa-sitemap"></i></div>
-                    <div class="stat-info">
-                        <p class="stat-title">จำนวนแหล่งที่มาต้นทาง</p>
-                        <h3 class="stat-value" id="totalSources">0</h3>
-                        <p class="stat-change text-muted">หน่วยงาน</p>
-                    </div>
-                </div>
-            </section>
-
-            <section class="charts-grid">
-                <div class="chart-container custom-chart section-glass">
-                    <div class="chart-header">
-                        <h2>สัดส่วนหัวข้อ</h2>
-                    </div>
-                    <div class="canvas-wrapper doughnut-wrapper">
-                        <canvas id="categoryChart"></canvas>
-                    </div>
-                </div>
-
-                <div class="chart-container large-chart section-glass">
-                    <div class="chart-header">
-                        <h2>ปริมาณการลงข้อมูล (รายเดือน)</h2>
-                    </div>
-                    <div class="canvas-wrapper">
-                        <canvas id="trendChart"></canvas>
-                    </div>
-                </div>
-            </section>
-
-            <section class="table-section section-glass">
-                <div class="table-header">
-                    <h2>รายการอัปเดตข้อมูลล่าสุด</h2>
-                </div>
-                <div class="table-responsive">
-                    <table class="data-table">
-                        <thead>
-                            <tr>
-                                <th>ลำดับ</th>
-                                <th>หน่วยงาน (เว็บ)</th>
-                                <th>ชื่อเรื่อง</th>
-                                <th>หัวข้อ</th>
-                                <th>วันที่รับ/แล้วเสร็จ</th>
-                                <th>สถานะ</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tableBody">
-                            <tr>
-                                <td colspan="6" style="text-align:center;">กรุณาอัปโหลดไฟล์ข้อมูล</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </section>
+            <div class="calendar-wrapper">
+                <div id="calendar"></div>
+            </div>
         </main>
     </div>
-    <script src="app.js"></script>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/dexie@3.2.4/dist/dexie.min.js"></script>
+    <script src="site-config.js"></script>
+    <script src="sync.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="script.js"></script>
 </body>
 
 </html>

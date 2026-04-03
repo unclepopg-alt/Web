@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - ระบบจัดการการจองห้องอบรม</title>
+    <!-- Google Fonts -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Sarabun:wght@300;400;500;600&display=swap"
+        rel="stylesheet">
+    <!-- SweetAlert2 -->
+    <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
+    <!-- FullCalendar CSS (for view toggle) -->
+    <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.css" rel="stylesheet">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="../style.css">
+    <style>
+        .admin-table-container {
+            background: white;
+            border-radius: 20px;
+            padding: 1.5rem;
+            box-shadow: var(--card-shadow);
+            margin-top: 1rem;
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+
+        .data-table th {
+            text-align: left;
+            padding: 12px;
+            background: var(--primary-light);
+            color: var(--primary-color);
+            font-weight: 700;
+            font-size: 0.85rem;
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        .data-table td {
+            padding: 12px;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 0.88rem;
+            color: var(--text-main);
+        }
+
+        .data-table tr:hover {
+            background-color: #f8fafc;
+        }
+
+        .badge {
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .badge-room {
+            background: var(--primary-light);
+            color: var(--primary-color);
+        }
+
+        .action-btns {
+            display: flex;
+            gap: 8px;
+        }
+
+        .edit-btn {
+            background: #fdf2f8;
+            color: #db2777;
+            border: 1px solid #fbcfe8;
+            padding: 6px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .edit-btn:hover {
+            background: #fbcfe8;
+            transform: scale(1.1);
+        }
+
+        .del-btn {
+            background: #fff1f2;
+            color: #e11d48;
+            border: 1px solid #fecdd3;
+            padding: 6px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .del-btn:hover {
+            background: #fecdd3;
+            transform: scale(1.1);
+        }
+
+        .search-bar {
+            width: 100%;
+            padding: 10px 15px;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            margin-bottom: 1rem;
+            font-family: inherit;
+        }
+
+        .view-tab {
+            display: none;
+        }
+
+        .view-tab.active {
+            display: block;
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            border-radius: 10px;
+            color: rgba(255, 255, 255, 0.7);
+            text-decoration: none;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-bottom: 5px;
+        }
+
+        .nav-link:hover,
+        .nav-link.active {
+            background: rgba(255, 255, 255, 0.15);
+            color: white;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app-container">
+        <aside class="sidebar">
+            <div class="logo">
+                <div class="logo-icon"><img src="../1.png" alt="logo" style="width:100%;height:100%;object-fit:contain;">
+                </div>
+                <h1 style="font-size: 1.05rem;">Admin Dashboard<span> กทส.กห.</span></h1>
+            </div>
+
+            <div class="nav-section">
+                <div class="user-profile">
+                    <div class="user-avatar">💻</div>
+                    <div class="user-info">
+                        <div class="user-name">Administrator</div>
+                        <div class="user-role">ผู้ดูแลระบบ</div>
+                    </div>
+                    <button id="logout-btn" class="logout-icon-btn" title="ออกจากระบบ">🚪</button>
+                </div>
+            </div>
+
+            <nav class="sidebar-nav">
+                <div class="nav-section">
+                    <h3>Navigation</h3>
+                    <div class="nav-link active" data-target="calendar-view">
+                        <span>📅</span> แผนผังการจอง (Calendar)
+                    </div>
+                    <div class="nav-link" data-target="manage-view">
+                        <span>📋</span> จัดการข้อมูล (Update/Delete)
+                    </div>
+                    <div class="nav-link" data-target="stats-view">
+                        <span>📊</span> สรุปสถิติ (Statistics)
+                    </div>
+                </div>
+
+                <div class="nav-section">
+                    <h3>Stats</h3>
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <span class="stat-label">จองทั้งหมด</span>
+                            <span class="stat-value" id="total-bookings">0</span>
+                        </div>
+                        <div class="stat-card">
+                            <span class="stat-label">เดือนนี้</span>
+                            <span class="stat-value" id="month-bookings">0</span>
+                        </div>
+                    </div>
+                </div>
+            </nav>
+
+            <div class="sidebar-footer">
+                <button id="export-pdf-btn" class="primary-btn" style="width: 100%;">ส่งออกรายงาน (PDF)</button>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <header class="top-header">
+                <div class="header-info">
+                    <h2 id="view-title">แผงควบคุมผู้ดูแลระบบ</h2>
+                    <p>จัดการและแก้ไขข้อมูลการจองห้องอบรมคอมพิวเตอร์ · โฟลเดอร์ <code>admin-web</code></p>
+                    <p id="data-sync-note" style="font-size: 0.82rem; color: var(--text-muted); margin-top: 0.4rem;">
+                    </p>
+                </div>
+                <div class="header-actions">
+                    <a href="../index.html" class="secondary-btn"
+                        style="padding: 10px 20px; text-decoration: none; text-align: center;">หน้าแรกผู้ใช้งาน</a>
+                    <button id="add-booking-btn" class="primary-btn">เพิ่มการจองใหม่</button>
+                </div>
+            </header>
+
+            <div id="calendar-view" class="view-tab active">
+                <div class="calendar-wrapper">
+                    <div id="calendar"></div>
+                </div>
+            </div>
+
+            <div id="manage-view" class="view-tab">
+                <div class="admin-table-container">
+                    <input type="text" id="table-search" class="search-bar"
+                        placeholder="ค้นหาหัวข้อการอบรม, ชื่อผู้จอง หรือหน่วยงาน...">
+                    <div style="overflow-x: auto;">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>ลำดับ</th>
+                                    <th>หัวข้อการอบรม</th>
+                                    <th>ผู้จอง/หน่วยงาน</th>
+                                    <th>ห้อง/เวลา</th>
+                                    <th>จัดการ</th>
+                                </tr>
+                            </thead>
+                            <tbody id="admin-table-body">
+                                <!-- Dynamic Content -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div id="stats-view" class="view-tab">
+                <div class="stats-dashboard-grid">
+                    <div class="chart-container-wrapper">
+                        <h3>📈 แนวโน้มการจองรายเดือน</h3>
+                        <canvas id="monthlyTrendChart"></canvas>
+                    </div>
+                    <div class="chart-container-wrapper">
+                        <h3>🏢 สรุปการจองรายหน่วยงาน</h3>
+                        <canvas id="agencyChart"></canvas>
+                    </div>
+                    <div class="chart-container-wrapper full-width">
+                        <h3>🕒 ช่วงเวลาที่นิยมจอง</h3>
+                        <canvas id="timeSlotChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/dexie@3.2.4/dist/dexie.min.js"></script>
+    <script src="../site-config.js"></script>
+    <script src="../sync.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="admin.js"></script>
+</body>
+
+</html>

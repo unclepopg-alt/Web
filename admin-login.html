@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>เข้าสู่ระบบผู้ดูแล — re-main</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&family=Inter:wght@500;600&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="../style.css">
+    <style>
+        .login-wrap {
+            min-height: 100vh;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1.5rem;
+            background: linear-gradient(145deg, var(--primary-light) 0%, var(--bg-color) 45%, #e8ecf1 100%);
+        }
+
+        .login-card {
+            width: 100%;
+            max-width: 420px;
+            background: var(--glass-bg);
+            border-radius: 20px;
+            padding: 2.25rem 2rem;
+            box-shadow: var(--card-shadow);
+            border: 1px solid var(--glass-border);
+            animation: fadeInUp 0.45s ease-out;
+        }
+
+        .login-card h1 {
+            font-size: 1.35rem;
+            color: var(--primary-color);
+            margin-bottom: 0.35rem;
+        }
+
+        .login-card .sub {
+            font-size: 0.88rem;
+            color: var(--text-muted);
+            margin-bottom: 1.5rem;
+            line-height: 1.5;
+        }
+
+        .login-card label {
+            display: block;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-bottom: 0.35rem;
+            font-weight: 600;
+        }
+
+        .login-card input {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            font-family: inherit;
+            font-size: 0.95rem;
+            margin-bottom: 1rem;
+        }
+
+        .login-card input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(0, 51, 102, 0.15);
+        }
+
+        .login-card button[type="submit"] {
+            width: 100%;
+            padding: 12px;
+            margin-top: 0.25rem;
+            border: none;
+            border-radius: 10px;
+            background: var(--primary-color);
+            color: #fff;
+            font-weight: 600;
+            font-family: inherit;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .login-card button[type="submit"]:hover {
+            background: var(--primary-hover);
+        }
+
+        .login-footer {
+            margin-top: 1.25rem;
+            text-align: center;
+            font-size: 0.85rem;
+        }
+
+        .login-footer a {
+            color: var(--primary-color);
+            font-weight: 600;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="login-wrap">
+        <div class="login-card">
+            <h1>เข้าสู่ระบบผู้ดูแล</h1>
+            <p class="sub">โฟลเดอร์ <code>admin-web</code> — ข้อมูลการจองเชื่อมกับหน้าใช้งานหลัก (re-main) ชุดเดียวกัน
+                (ฐาน <code>TrainingRoomDB</code> บนเบราว์เซอร์ + ไฟล์ <code>data/bookings.json</code> ที่รากโปรเจกต์)</p>
+            <form id="login-form" autocomplete="on">
+                <label for="login-user">ชื่อผู้ใช้</label>
+                <input id="login-user" name="user" type="text" required autocomplete="username"
+                    placeholder="ชื่อผู้ใช้">
+                <label for="login-pass">รหัสผ่าน</label>
+                <input id="login-pass" name="pass" type="password" required autocomplete="current-password"
+                    placeholder="รหัสผ่าน">
+                <button type="submit">เข้าสู่ระบบ</button>
+            </form>
+            <div class="login-footer">
+                <a href="../index.html">← กลับหน้าปฏิทินผู้ใช้งาน</a>
+            </div>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="../site-config.js"></script>
+    <script>
+        document.getElementById('login-form').addEventListener('submit', function (e) {
+            e.preventDefault();
+            var cfg = window.ADMIN_LOGIN || {};
+            var u = document.getElementById('login-user').value.trim();
+            var p = document.getElementById('login-pass').value;
+            var okUser = cfg.username != null ? cfg.username : 'admin';
+            var okPass = cfg.password != null ? cfg.password : 'admin123';
+            if (u === okUser && p === okPass) {
+                localStorage.setItem('current_user', JSON.stringify({ role: 'admin', name: u }));
+                window.location.href = 'admin.html';
+            } else {
+                Swal.fire({ icon: 'error', title: 'เข้าสู่ระบบไม่สำเร็จ', text: 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง' });
+            }
+        });
+    </script>
+</body>
+
+</html>
